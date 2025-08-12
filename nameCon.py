@@ -1,4 +1,17 @@
-def nameCon(objSpace, objName, objType):
+#----------------------------------------------------------------#
+#						ZR Name Convention						 #
+#						   v.2025-08-03							 #
+#----------------------------------------------------------------#
+
+# Import commands
+import maya.cmds as cmds
+
+# ----------------------------------------------------------------
+# Function : ZR_nameCon
+# ----------------------------------------------------------------
+
+
+def ZR_nameCon(objSpace, objName, objType):
 
 	objTypeName = ""
 
@@ -47,6 +60,9 @@ def nameCon(objSpace, objName, objType):
 			objSpaceName = "R"
 
 		elif objSpace == "center" :
+			objSpaceName = "C"
+		
+		elif objSpace == "C" :
 			objSpaceName = "C"
 
 		elif objSpace == "top" :
