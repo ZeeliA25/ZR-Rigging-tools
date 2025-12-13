@@ -1,138 +1,211 @@
-#selctionner un joint pui sdeterminer les differentes parties du membre
-#en fonction des entites on batit les nomenclatures chaines et controleurs
-from nameCon import *
+#--------------------------------------------------------------#
+#                       ZR IKFK		                           #
+#                v.2025-09-28-001 / Maya 2023.3.1              #
+#--------------------------------------------------------------#
+
+# Import modules
+
+from ZR_nameCon import *
 from ZR_makeControler import *
 from ZR_displayCurve import *
 from ZR_rotatePlane import *
+from ZR_ribbonMaker import *
 
-#lister la selection 
+#---------------------------------------------------------------
+# Identify different parts of the IKFK system
+#---------------------------------------------------------------
+
+# List selection 
 
 sel = cmds.ls(sl=True, type = "joint")
 
-#verifier qu' il n'y a qu'un joint de selectionne shoulder
+# Check only one object is selected
 
 if len(sel) != 1 :
-	cmds.error("Too many arguments selected")
+    cmds.error("Too many arguments selected")
+
+else :
+    result = cmds.promptDialog(
+    title = "Limb type",
+    message = "Enter limb type",
+    text = "arm",
+    button = ("OK", "Cancel"),
+    defaultButton = "OK",
+    cancelButton = "Cancel",
+    dismissString = "Cancel")
+
+    if result == "OK" :
+        limbType = cmds.promptDialog(query = True, text = True)
+    else :
+        cmds.error("Nothing entered")
 
 dad = sel[0]
 
-#chercher les enfants et le parent de la selection
+# Look for selection's children (elbow and wrist)
 son = cmds.listRelatives(dad, c = True)
-
 grandson = cmds.listRelatives(son, c = True)
+cousin = cmds.listRelatives(grandson, c = True)
+cousinEnd = cmds.listRelatives(cousin, c = True)
 
+# Look for selection's parent (clavicle)
 grandDad = cmds.listRelatives(dad, p = True)
 
-#chercher la position dans l'espace du membre (droite ou gauche ou centre)
+#Determine object's position in space (left, right or center)
 
 spacePosition = cmds.xform(dad, query=1, t=1, ws=1 )
 side = ""
 
 if spacePosition[0] > 0 :
-	side = "left"
+    side = "left"
 elif spacePosition[0] < 0 :
-	side = "right"
+    side = "right"
 else :
 	side = ""
 
-dadSK = cmds.rename(dad, nameCon(side, "shoulder", "skin"))
-sonSK = cmds.rename(son, nameCon(side, "elbow", "skin"))
-grandsonSK = cmds.rename(grandson, nameCon(side, "wrist", "skin"))
+# Determine if it's an arm or a leg 
 
-#chercher la taille ? 
+if limbType == "arm" :
+	dadName = "shoulder"
+	sonName = "elbow"
+	grandsonName = "wrist"
+	limb = "hand"
+
+if limbType == "leg" :
+	dadName = "hip"
+	sonName = "knee"
+	grandsonName = "ankle"
+	limb = "foot"
+	digit = "toes"  
+
+
+# Rename skinning joints
+dadSK = cmds.rename(dad, ZR_nameCon(side, dadName, "skin"))
+sonSK = cmds.rename(son, ZR_nameCon(side, sonName, "skin"))
+grandsonSK = cmds.rename(grandson, ZR_nameCon(side, grandsonName, "skin"))
+
+if limbType == "leg" :
+    cousinSK = cmds.rename(cousin, ZR_nameCon(side, digit, "skin"))
+    cousinEndSK = cmds.rename(cousinEnd, ZR_nameCon(side, digit, "skinEnd"))
+
+
+# Get main controller's size
 
 globalSize = cmds.getAttr("C_main_ctl" + ".GEO_SIZE")
 
+#---------------------------------------------------------------
+# Creation of global controller
+#---------------------------------------------------------------
 
-#creation du global loc
+# Creation of Global locator
+globalLoc = cmds.spaceLocator(n = ZR_nameCon(side, limbType, "locator"))
 
-globalLoc = cmds.spaceLocator(n = nameCon(side, "arm", "locator"))
-
-#creation de l'attribut IKFK
-
+# Create IKFK attribute / Match transform 
 IKFK = cmds.addAttr(globalLoc[0], k = True, ln="IKFK", defaultValue=1, minValue=0, maxValue=1, at = "float")
 cmds.matchTransform(globalLoc[0], dadSK)
-#chercher le groupe rigging s'il existe parenter le global dedans
 
+# Parent locator to "RIGGING" group if it exists
 if (cmds.objExists("RIGGING")) == 1 :
 	cmds.parent(globalLoc[0], "RIGGING")
 
-#la clavicule affecte le locator global
+# Constraint global locator by clavicle 
 
 cmds.parentConstraint(grandDad[0], globalLoc, mo = 1)
 
-###############FK system
+#---------------------------------------------------------------
+# FK system
+#---------------------------------------------------------------
 
-#creation de controleur fk pour shoulder, elbow et wrist 
+# Creation of controllers for : shoulder / elbow / wrist
 dadCtlBase = ZR_makeControler(dadSK)
 sonCtlBase = ZR_makeControler(sonSK)
 grandsonCtlBase = ZR_makeControler(grandsonSK)
 
-dadCtl = cmds.rename(dadCtlBase[0], nameCon(side, "shoulder", "controller"))
-sonCtl = cmds.rename(sonCtlBase[0], nameCon(side, "elbow", "controller"))
-grandsonCtl = cmds.rename(grandsonCtlBase[0], nameCon(side, "wrist", "controller"))
-dadGrp = cmds.rename(dadCtlBase[1], nameCon(side, "shoulder", "group"))
-sonGrp = cmds.rename(sonCtlBase[1], nameCon(side, "elbow", "group"))
-grandsonGrp = cmds.rename(grandsonCtlBase[1], nameCon(side, "wrist", "group"))
+if limbType == "leg" :
+    cousinCtlBase = ZR_makeControler(cousinSK)
 
-# Créer le PoleVector FK
+
+# Rename FK controllers
+dadCtl = cmds.rename(dadCtlBase[0], ZR_nameCon(side, dadName, "controller"))
+sonCtl = cmds.rename(sonCtlBase[0], ZR_nameCon(side, sonName, "controller"))
+grandsonCtl = cmds.rename(grandsonCtlBase[0], ZR_nameCon(side, grandsonName, "controller"))
+
+if limbType == "leg" :
+    cousinCtl = cmds.rename(cousinCtlBase[0], ZR_nameCon(side, digit, "controller"))
+
+# Rename FK placement groups 
+dadGrp = cmds.rename(dadCtlBase[1], ZR_nameCon(side, dadName, "group"))
+sonGrp = cmds.rename(sonCtlBase[1], ZR_nameCon(side, sonName, "group"))
+grandsonGrp = cmds.rename(grandsonCtlBase[1], ZR_nameCon(side, grandsonName, "group"))
+
+if limbType == "leg" :
+    cousinGrp = cmds.rename(cousinCtlBase[1], ZR_nameCon(side, digit, "group"))
+
+# Creation of FK pole vector
 FKpvBase = ZR_makeControler(sonSK)
-FKpvCtl = cmds.rename(FKpvBase[0], nameCon(side, "FKarmPV", "controller"))
-FKpvGrp = cmds.rename(FKpvBase[1], nameCon(side, "FKarmPV", "group"))
+print(FKpvBase[0], FKpvBase[1])
+FKpvCtl = cmds.rename(FKpvBase[0], ZR_nameCon(side, "FK" + limbType + "PV", "controller"))
+FKpvGrp = cmds.rename(FKpvBase[1], ZR_nameCon(side, "FK" + limbType + "PV", "group"))
 
 cmds.matchTransform(FKpvGrp, FKpvCtl)
 
-#Placer le pole Vector
-
+# Place FK pole vector
 ZR_rotatePlane(dadSK, sonSK, grandsonSK)
 cmds.matchTransform(FKpvGrp, "previz_loc")
 
-#faire la hierarchie des controleurs 
-
+# FK hierarchy 
 cmds.parent(sonGrp, dadCtl)
 cmds.parent(grandsonGrp, sonCtl)
 cmds.parent(FKpvGrp, sonCtl)
 
-#contrainte de la clavicule sur le groupe de placement du shoulder
+if limbType == "leg" :
+    cmds.parent(cousinGrp, grandsonCtl)
+
+# Hide FK pole vector 
+cmds.setAttr(FKpvGrp + ".visibility", 0)
+
+# Constraint shoulder group with clavicle
 cmds.parentConstraint(grandDad, dadGrp, mo=1)
 
-#attribut follow sur le shoulder 
-cmds.addAttr(dadCtl, k=1, ln="Follow", defaultValue=1, minValue=0, maxValue=1)
+# Shoulder Follow World attribute
+if limbType == "arm" :
+    cmds.addAttr(dadCtl, k=1, ln="Follow_World", defaultValue=1, minValue=0, maxValue=1)
 
-#blend de contrainte orient entre le monde et le chest
+# orient constraint between world and chest
 
 if (cmds.objExists("worldFollow_loc")) :
     worldLoc = "worldFollow_loc"
 else :
-    worldLoc = cmds.spaceLocator(n=nameCon("","worldFollow","locator"))
+    worldLoc = cmds.spaceLocator(n=ZR_nameCon("","worldFollow","locator"))
     cmds.parent(worldLoc, "RIGGING")
     
 if (cmds.objExists("chestFollow_loc")) :
     chestLoc = "chestFollow_loc"
 else :
-    chestLoc = cmds.spaceLocator(n=nameCon("","chestFollow","locator"))
+    chestLoc = cmds.spaceLocator(n=ZR_nameCon("","chestFollow","locator"))
+    chest = cmds.listRelatives(grandDad, p = True)
+    cmds.matchTransform(chestLoc, chest[0], pos=True, rot=False)
+    cmds.parentConstraint(chest[0], chestLoc, mo = 1)
     cmds.parent(chestLoc, "RIGGING")
     
-chest = cmds.listRelatives(grandDad, p = True)
-cmds.matchTransform(chestLoc, chest, pos=True, rot=False)
-offsetOrientFK = cmds.group(em = 1, name = nameCon(side, "offsetOrient", "group"))
-cmds.matchTransform(offsetOrientFK, dadCtl)
-cmds.parent(offsetOrientFK, dadGrp)
-cmds.parent(dadCtl, offsetOrientFK)
-followConstraint = cmds.orientConstraint(worldLoc, chestLoc, offsetOrientFK, mo=1)
-reverseNode = cmds.createNode("reverse")
-cmds.connectAttr(dadCtl + ".Follow", reverseNode + ".inputX")
-cmds.connectAttr(reverseNode + ".outputX", followConstraint[0] + ".chestFollow_locW1.")
-cmds.connectAttr(dadCtl + ".Follow", followConstraint[0] + ".worldFollow_locW0.") 
+if limbType == "arm" :
+    offsetOrientFK = cmds.group(em = 1, name = ZR_nameCon(side, limbType + "offsetOrient", "group"))
+    cmds.matchTransform(offsetOrientFK, dadCtl)
+    cmds.parent(offsetOrientFK, dadGrp)
+    cmds.parent(dadCtl, offsetOrientFK)
+    followConstraint = cmds.orientConstraint(worldLoc, chestLoc, offsetOrientFK, mo=1) #only when limb is an arm
+    reverseNode = cmds.createNode("reverse")
+    cmds.connectAttr(dadCtl + ".Follow_World", reverseNode + ".inputX")
+    cmds.connectAttr(reverseNode + ".outputX", followConstraint[0] + ".chestFollow_locW1.")
+    cmds.connectAttr(dadCtl + ".Follow_World", followConstraint[0] + ".worldFollow_locW0.") 
 
 
-#proxy de l'attribut IKFK du controleur global sur les controleurs FK
-
+# Proxy atribute IKFK on FK controllers
 cmds.addAttr(dadCtl, ln="IKFK", pxy= globalLoc[0] + ".IKFK")
 cmds.addAttr(sonCtl, ln="IKFK", pxy= globalLoc[0] + ".IKFK")
 cmds.addAttr(grandsonCtl, ln="IKFK", pxy= globalLoc[0] + ".IKFK")
 
-#############IK system
+if limbType == "leg" :
+    cmds.addAttr(cousinCtl, ln="IKFK", pxy = globalLoc[0] + ".IKFK")
 
 #----------------------------------------------------------------
 # IK System
@@ -143,18 +216,32 @@ cmds.addAttr(grandsonCtl, ln="IKFK", pxy= globalLoc[0] + ".IKFK")
 IKchain = cmds.duplicate(dadSK, rc= 1 )
 
 counter = 0
-for IKjoint in IKchain :
-	if counter < 3 :
-		counter = counter+1
-	else :
-		if (objExists(IKjoint)) :
-			cmds.delete(IKjoint)
 
+if limbType == "arm" :
+    for IKjoint in IKchain :
+        if counter < 3 :
+            counter = counter+1
+        else :
+            if cmds.objExists(IKjoint) == 1 :
+                cmds.delete(IKjoint)
+
+if limbType == "leg" :
+    for IKjoint in IKchain :
+        if counter < 5 :
+            counter = counter+1
+        else :
+            if cmds.objExists(IKjoint) == 1 :
+                cmds.delete(IKjoint)
 
 # Renommer les joints IK
-dadIK = cmds.rename(IKchain[0], nameCon(side, "shoulder", "rig"))
-sonIK = cmds.rename(IKchain[1], nameCon(side, "elbow", "rig"))
-grandsonIK = cmds.rename(IKchain[2], nameCon(side, "wrist", "rig"))
+dadIK = cmds.rename(IKchain[0], ZR_nameCon(side, dadName, "rig"))
+sonIK = cmds.rename(IKchain[1], ZR_nameCon(side, sonName, "rig"))
+grandsonIK = cmds.rename(IKchain[2], ZR_nameCon(side, grandsonName, "rig"))
+
+if limbType == "leg" :
+    cousinIK = cmds.rename(IKchain[3], ZR_nameCon(side, digit, "rig"))
+    cousinEndIK = cmds.rename(IKchain[4], ZR_nameCon(side, digit, "rigEnd"))
+    
 # Parenter la chaine IK au Locator Global
  
 cmds.parent(dadIK, globalLoc[0])
@@ -162,25 +249,23 @@ cmds.parent(dadIK, globalLoc[0])
 # Créer le Controler IK de la main
 
 handIKbase = ZR_makeControler(grandsonIK)
-handIKctl = cmds.rename(handIKbase[0], nameCon(side, "hand", "controller"))
-handIKgrp = cmds.rename(handIKbase[1], nameCon(side, "hand", "group"))
+handIKctl = cmds.rename(handIKbase[0], ZR_nameCon(side, limb, "controller"))
+handIKgrp = cmds.rename(handIKbase[1], ZR_nameCon(side, limb, "group"))
 
 # Créer le PoleVector
 pvBase = ZR_makeControler(sonIK)
-pvCtl = cmds.rename(pvBase[0], nameCon(side, "armPV", "controller"))
-pvGrp = cmds.rename(pvBase[1], nameCon(side, "armPV", "group"))
+pvCtl = cmds.rename(pvBase[0], ZR_nameCon(side, limbType + "PV", "controller"))
+pvGrp = cmds.rename(pvBase[1], ZR_nameCon(side, limbType + "PV", "group"))
 
 cmds.matchTransform(pvGrp, pvCtl)
 
-#Placer le pole Vector
-cmds.parent(pvGrp, sonIK)
+# Placer le pole Vector
 
 cmds.matchTransform(pvGrp, "previz_loc")
 cmds.delete("PREVIZ")
 
-cmds.parent(pvGrp, "CONTROLLERS")
 
-#Contrainte sur le pole Vector
+# Contrainte sur le pole Vector
 mainCtl = "C_main_ctl"
 cmds.addAttr(pvCtl, longName = "Follow_Main", attributeType = "float", k=1, min = 0, max=1, defaultValue=1)
 pvParentConstraint = cmds.parentConstraint(mainCtl, handIKctl, pvGrp, mo=1)
@@ -193,29 +278,30 @@ cmds.connectAttr(pvCtl + ".Follow_Main", reverseNode + ".inputX")
 cmds.connectAttr(reverseNode + ".outputX", pvParentConstraint[0] + "." + handIKctl + "W1")
 
 # Créer la curve d'affichage
-curveIKPv = ZR_displayCurve(sonIK, pvCtl)
-### Attribut "Follow World" sur le controler de la main IK
+
+curveIKPv = ZR_displayCurve(pvCtl, sonIK)
+cmds.connectAttr(globalLoc[0] + ".IKFK", curveIKPv + ".visibility")
+
+# Attribut "Follow World" sur le controler de la main IK
 cmds.addAttr(handIKctl, ln = "Follow_World", k=1, defaultValue=1, minValue=0, maxValue=1)
-### Blend de contrainte en le monde et la main IK
-offsetOrientIK = cmds.group(em = 1, name = nameCon(side, "offsetOrientIK", "group"))
+
+# Blend de contrainte en le monde et la main IK
+offsetOrientIK = cmds.group(em = 1, name = ZR_nameCon(side, limbType + "offsetOrientIK", "group"))
 cmds.matchTransform(offsetOrientIK, handIKgrp)
 cmds.parent(offsetOrientIK, handIKgrp)
 cmds.parent(handIKctl, offsetOrientIK)
 followIK = cmds.orientConstraint(worldLoc, offsetOrientIK, mo=1)
 cmds.connectAttr(handIKctl + ".Follow_World", followIK[0] + ".worldFollow_locW0.")
-# Renommer le controler IK et son groupe de placement
- 
-# Placement du PoleVector : dans un premier temps, placer sur le coude puis reculer sur Z
-### UPDATE : Trouver le recul et le placement optimal du PoleVector
  
 # Créer l'ikHandle et le parenter au controler, le cacher
-ikRpHandle = cmds.ikHandle(n=nameCon(side, 'IKRP', 'handle') , startJoint=dadIK , endEffector=grandsonIK, solver="ikRPsolver")
+ikRpHandle = cmds.ikHandle(n=ZR_nameCon(side, limbType + 'IKRP', 'handle') , startJoint=dadIK , endEffector=grandsonIK, solver="ikRPsolver")
 cmds.parent(ikRpHandle[0], handIKctl)
 
 cmds.setAttr(ikRpHandle[0]+".visibility", 0, lock=1)
 cmds.setAttr(ikRpHandle[0]+".translate", lock=1)
 cmds.setAttr(ikRpHandle[0]+".rotate", lock=1)
 cmds.setAttr(ikRpHandle[0]+".scale", lock=1)
+
 # Contraindre l'ikHandle par le Pole Vector
  
 cmds.poleVectorConstraint(pvCtl, ikRpHandle[0])
@@ -223,8 +309,17 @@ cmds.poleVectorConstraint(pvCtl, ikRpHandle[0])
 # Contraindre en Orient le joint de main par le controler de la main IK
 
 cmds.orientConstraint(handIKctl, grandsonIK)
+
+#Créer un IK Handle SC pour le pied 
+
+if limbType == "leg" :
+    footIKSCHandle = cmds.ikHandle(n = ZR_nameCon(side, "footIKSC", "handle"), startJoint = grandsonIK, endEffector = cousinIK, solver = "ikSCsolver")
+    toesIKSCHandle = cmds.ikHandle(n = ZR_nameCon(side, "toesIKSC", "handle"), startJoint = cousinIK, endEffector = cousinEndIK, solver = "ikSCsolver")
  
-### Stretch :)
+#----------------------------------------------------------------
+# Stretch :)
+#----------------------------------------------------------------
+
 cmds.addAttr(handIKctl, ln = "Stretch_Max", k = 1, min = 1, max = 10)
 
 distance = cmds.createNode("distanceBetween")
@@ -269,8 +364,9 @@ cmds.connectAttr(multiplyGrandson + ".outFloat", grandsonIK + ".translateX")
 cmds.addAttr(handIKctl, ln="IKFK", pxy= globalLoc[0] + ".IKFK")
 cmds.addAttr(pvCtl, ln="IKFK", pxy= globalLoc[0] + ".IKFK")
 
-
-#############Blend system
+#---------------------------------------------------------------
+# Blend system
+#---------------------------------------------------------------
 
 #parent constraint des controleurs aux joints
 
@@ -282,6 +378,10 @@ cmds.setAttr(blendSon[0] + ".interpType", 2)
 
 blendGrandson = cmds.parentConstraint(grandsonCtl, grandsonIK, grandsonSK)
 cmds.setAttr(blendGrandson[0] + ".interpType", 2)
+
+if limbType == "leg" :
+    blendCousin = cmds.parentConstraint(cousinCtl, cousinIK, cousinSK)
+    cmds.setAttr(blendCousin[0] + ".interpType", 2)
 
 
 
@@ -296,8 +396,13 @@ cmds.connectAttr(globalLoc[0] +".IKFK", blendSon[0] + "." + sonIK + "W1")
 cmds.connectAttr(reverseNode +".outputX", blendGrandson[0] + "." + grandsonCtl + "W0")
 cmds.connectAttr(globalLoc[0] +".IKFK", blendGrandson[0] + "." + grandsonIK + "W1")
 
+if limbType == "leg" :
+    cmds.connectAttr(reverseNode +".outputX", blendCousin[0] + "." + cousinCtl + "W0")
+    cmds.connectAttr(globalLoc[0] +".IKFK", blendCousin[0] + "." + cousinIK + "W1")
+
+
 cmds.connectAttr(globalLoc[0] + ".IKFK", handIKgrp + ".visibility")
-cmds.connectAttr(globalLoc[0] + ".IKFK", curveIKPv + ".visibility")
+#cmds.connectAttr(globalLoc[0] + ".IKFK", curveIKPv + ".visibility")
 cmds.connectAttr(globalLoc[0] + ".IKFK", pvGrp + ".visibility")
 
 cmds.connectAttr(reverseNode + ".outputX", dadGrp + ".visibility")
@@ -307,7 +412,60 @@ ctrlList = cmds.ls(dadCtl, sonCtl, grandsonCtl, FKpvCtl, handIKctl, pvCtl, dadIK
 for ctrl in ctrlList :
     cmds.addAttr(ctrl, ln = "GLOBAL", dataType = "string")
     cmds.setAttr(ctrl + ".GLOBAL", globalLoc[0], type = "string", lock = 1)
+
+#---------------------------------------------------------------
+# Ribbon system
+#---------------------------------------------------------------
+
+# Create the ribbon 
+dadCurves = ZR_ribbonMaker(dadSK, sonSK, "Start", globalLoc[0])
+sonCurves = ZR_ribbonMaker(sonSK, grandsonSK, "End", globalLoc[0])
+
+# Create the ribbon controllers
+dadRibCtlbase = ZR_makeControler(dadCurves[1])
+sonRibCtlBase = ZR_makeControler(sonCurves[1])
+
+dadRibCtl = cmds.rename(dadRibCtlbase[0], ZR_nameCon(side, dadName + "Ribbon", "controller"))
+dadRibGrp = cmds.rename(dadRibCtlbase[1], ZR_nameCon(side, dadName + "Ribbon", "group"))
+
+sonRibCtl = cmds.rename(sonRibCtlBase[0], ZR_nameCon(side, sonName + "Ribbon", "controller"))
+sonRibGrp = cmds.rename(sonRibCtlBase[1], ZR_nameCon(side, sonName + "Ribbon", "group"))
+
+# List connections
+blendMatrixDad = cmds.listConnections((dadCurves[1] + ".offsetParentMatrix"), source = 1, type = "blendMatrix")
+blendMatrixSon = cmds.listConnections((sonCurves[1] + ".offsetParentMatrix"), source = 1, type = "blendMatrix")
+
+# Connect blend matrix nodes to groups 
+parentGrp = cmds.listRelatives(dadRibGrp, parent = 1)
+
+multMatrixRibDad = cmds.createNode("multMatrix")
+multMatrixRibSon = cmds.createNode("multMatrix")
+
+cmds.connectAttr((blendMatrixDad[0] + ".outputMatrix"), (multMatrixRibDad + ".matrixIn[0]"))
+cmds.connectAttr((blendMatrixSon[0] + ".outputMatrix"), (multMatrixRibSon + ".matrixIn[0]"))
+
+cmds.connectAttr(parentGrp[0]+ ".worldInverseMatrix[0]", multMatrixRibDad + ".matrixIn[1]")
+cmds.connectAttr(parentGrp[0]+ ".worldInverseMatrix[0]", multMatrixRibSon + ".matrixIn[1]")
+
+cmds.connectAttr(multMatrixRibDad + ".matrixSum", dadRibGrp + ".offsetParentMatrix")
+cmds.connectAttr(multMatrixRibSon + ".matrixSum", sonRibGrp + ".offsetParentMatrix")
+
+cmds.setAttr(dadRibGrp + ".translate", 0,0,0)
+cmds.setAttr(dadRibGrp + ".rotate", 0,0,0)
+
+cmds.setAttr(sonRibGrp + ".translate", 0,0,0)
+cmds.setAttr(sonRibGrp + ".rotate", 0,0,0)
+
+# Connect controllers to curves 
+cmds.connectAttr(dadRibCtl + ".translate", dadCurves[1] + ".translate")
+cmds.connectAttr(dadRibCtl + ".rotate", dadCurves[1] + ".rotate")
+cmds.connectAttr(sonRibCtl + ".translate", sonCurves[1] + ".translate")
+cmds.connectAttr(sonRibCtl + ".rotate", sonCurves[1] + ".rotate")
+
 	
+#---------------------------------------------------------------
+#META DATA IKFK
+#---------------------------------------------------------------
 	
 cmds.addAttr(globalLoc[0], ln = "Limb_Type", dataType = "string")
 cmds.setAttr(globalLoc[0] + ".Limb_Type", "arm", type = "string", lock=1)
