@@ -108,40 +108,6 @@ def checkList():
     textureCheck = cmds.checkBox(l='Textures assignees')
     filepathCheck = cmds.checkBox(l='Verifier le file path des exr')
     
-def createWindow():
-    if cmds.window('Render_setup', exists=True):
-        cmds.deleteUI('Render_setup')
-    cmds.window('Render setup', w=150)
-  
-    
-    checklistLayout = cmds.columnLayout(adjustableColumn=1,h=30)
-    cmds.text(label='Checklist :', align='left',  bgc=[0.4,0.4,0.4], h=30 )
-    checkList()
-    
-    separator01 = cmds.separator(height=10)
-    cmds.columnLayout(rowSpacing=2, columnWidth=250, bgc=[0.3,0.3,0.3], adjustableColumn = True)
-    cmds.button(l='Catmull Clark', w= 100, c= 'set_catmull_clark()',  bgc=[0.4,0.4,0.4])
-   
-    separator02 = cmds.separator(height=10)
-    cmds.text(label='Selection visibility :', align='left' )
-    visibilityLayout = cmds.columnLayout(adjustableColumn=1)
-    #check_boxes()
-    #cmds.button(l='Set visibility', w= 100, c= 'set_visibility()')
-    cmds.button(l='Camera visibility', w= 100, c= 'set_camera_visibility()',  bgc=[0.4,0.4,0.4])
-    cmds.button(l='Indirect visibility', w= 100, c= 'set_indirect_visibility()',  bgc=[0.4,0.4,0.4])
-    cmds.button(l='Transmission visibility', w= 100, c= 'set_transmission_visibility()',  bgc=[0.4,0.4,0.4])
-    cmds.button(l='Viewport visibility', w= 100, c= 'hide_selection()',  bgc=[0.4,0.4,0.4])
-    
-    separator03 = cmds.separator(height=10)
-    
-    lightslayout = cmds.rowLayout(adjustableColumn=1, numberOfColumns=2, h=30, bgc=[0.5,0.5,0.5])
-    cmds.text( label='Neutralize lights :', align='left' )
-    cmds.button(l="Apply", w=150, c="neutralize_lights()", align='right', bgc=[0.4,0.4,0.4])
-    
-    cmds.showWindow('Render_setup')
-
-    
-
 
 class RenderSetupGui(QtWidgets.QDialog):
     def __init__(self, parent: QtWidgets.QWidget=None):
