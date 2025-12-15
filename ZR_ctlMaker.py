@@ -1,67 +1,93 @@
-# Import maya.cmds globally
+#--------------------------------------------------------------#
+#                     ZR Make Controler                        #
+#                     Author : ZeeliA                          #
+#                     v.2025-12-15-001                         #
+#--------------------------------------------------------------#
+
+from ZR_nameCon import *
 import maya.cmds as cmds
-from nameCon import *
 
-def ZR_ctlMaker(object):
-    # Déclarer une variable de taille
-    sizeValue = 1
+#---------------------------------------------------------------
+# Function : Creating a controler
+#---------------------------------------------------------------
 
-    # Si le controler "main" existe, demander la taille du personnage
-    mainCtrl = nameCon("", "main", "controller")
-    if cmds.objExists(mainCtrl) == 1:
-        sizeValue = cmds.getAttr(mainCtrl + ".GEO_SIZE")
-
-    # Creation du controler
-    ctlBase = cmds.circle(radius=sizeValue, ch=0, nr=(1, 0, 0))
-
-    # Creation du groupe de placement du controler
-    grpBase = cmds.group(ctlBase[0])
-
-    # MatchTransform du groupe du controler sur l'objet selectionné
+def ZR_makeControler(object) :
+    
+    # Declare size variable
+    sizeValue = 10
+    
+    # If "main" controller exists, fetch character size
+    mainCtrl = ZR_nameCon("", "main", "controller")    
+    if cmds.objExists(mainCtrl) == 1 :
+        sizeValue = cmds.getAttr(f"{mainCtrl}.GEO_SIZE")
+ 
+    # Create controller
+    ctrlBase = cmds.circle(radius=sizeValue, normal=(1, 0, 0), constructionHistory=0)
+    
+    # Create controller's offset group
+    grpBase = cmds.group(ctrlBase[0])
+    
+    # MatchTransform group on the chosen object
     cmds.matchTransform(grpBase, object)
+    
+    # Find controller's shape
+    ctrlShape = cmds.listRelatives(ctrlBase[0], shapes=1)
 
-    # Trouver la Shape du controler
-    ctlShape = cmds.listRelatives(ctlBase[0], shapes=1)
-
-    # Creation d'un override d'affichage
-    cmds.setAttr(ctlShape[0] + ".overrideEnabled", 1)
-
-    # Trouver la position sur X du controler
-    spacePosition = cmds.xform(grpBase, query=1, t=1, ws=1)
+    # Enable display override
+    cmds.setAttr(f"{ctrlShape[0]}.overrideEnabled", 1)
+    
+    # Find X position of the controller
+    spacePosition = cmds.xform(grpBase, query=1, translation=1, worldSpace=1)
     side = ""
-
-    # Si X est positif, overrideColor = 6 (Bleu)
-    if spacePosition[0] > 0.01:
-        cmds.setAttr(ctlShape[0] + ".overrideColor", 6)
+        
+    # If X is positive, overrideColor = 6 (Blue)
+    if spacePosition[0] > 0.01 :
+        cmds.setAttr(f"{ctrlShape[0]}.overrideColor", 6)
         side = "left"
-
-    # Sinon, si X est negatif, overrideColor = 13 (Rouge)
-    elif spacePosition[0] < -0.01:
-        cmds.setAttr(ctlShape[0] + ".overrideColor", 13)
+    
+    # If X is negative, overrideColor = 13 (Red)
+    elif spacePosition[0] < -0.01 :
+        cmds.setAttr(f"{ctrlShape[0]}.overrideColor", 13)
         side = "right"
-
-    # Sinon, si X = 0, overrideColor = 17 (Jaune)
-    else:
-        cmds.setAttr(ctlShape[0] + ".overrideColor", 17)
-
-    # Ranger dans le groupe de la hierarchie s'il existe
-    if cmds.objExists("CONTROLLERS") == 1:
+        
+    # Else, overrideColor = 17 (Yellow)
+    else :
+        cmds.setAttr(f"{ctrlShape[0]}.overrideColor", 17)
+    
+    # If "CONTROLLERS" group exists, store controller
+    if cmds.objExists("CONTROLLERS") == 1 :
         cmds.parent(grpBase, "CONTROLLERS")
-
+    
     # Renommer
-    ctl = cmds.rename(ctlBase[0], nameCon(side, object, "controller"))
-    grp = cmds.rename(grpBase, nameCon(side, object, "group"))
+    #objectName = object.split("_")
 
-    # Retourner le nom du controler et du groupe de placement
-    return ctl, grp
+    #if len(objectName) > 1 :
+        #newName = objectName[1]
 
+    #else :
+        #newName = objectName[0]
+    
+    ctrl = cmds.rename(ctrlBase[0], ZR_nameCon(side, object, "controller"))
+    grp = cmds.rename(grpBase, ZR_nameCon(side, object, "group"))
+    
+    # Return the name of the controller and offset group
+    return(ctrl, grp)
+    
 
-def ZR_makeCtlSelection():
-    # Lister la selection
-    sel = cmds.ls(sl=True)
-    if len(sel) == 0:
-        cmds.error("Nothing is selected dude!")
+#---------------------------------------------------------------
+# Function : Creating a controler on selection
+#---------------------------------------------------------------
 
-    else:
-        for object in sel:
-            ZR_ctlMaker(object)
+def ZR_makeControlerSelection() :
+
+    # List selection
+    sel = cmds.ls(sl=1)
+    
+    # Check : Is there a selection ?
+    if len(sel) == 0 :
+        cmds.error("!!! No object selected. Please select one object or more !!!")
+        
+    else :   
+        # For each selected objects, create a controller
+        for object in sel :
+            ZR_makeControler(object)
