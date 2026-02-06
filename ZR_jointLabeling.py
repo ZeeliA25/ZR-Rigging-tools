@@ -1,4 +1,14 @@
-import maya.cmds as cmds 
+#--------------------------------------------------------------#
+#                     ZR Joint Labeling                        #
+#                     Author : ZeeliA                          #
+#                     v.2026-02-06-001                         #
+#--------------------------------------------------------------#
+
+import maya.cmds as cmds
+
+#---------------------------------------------------------------
+# Function : Label joints according to name
+#---------------------------------------------------------------
 
 def ZR_jointLabeling(obj) :
     sel = cmds.ls(sl = True) 
