@@ -1,10 +1,11 @@
 #--------------------------------------------------------------#
 #                       ZR Rotate Plane                        #
-#                v.2025-03-10-001 / Maya 2023.1                #
+#                     Author : ZeeliA                          #
+#                v.2026-02-06-001 / Maya 2023.1                #
 #--------------------------------------------------------------#
 
 import maya.cmds as cmds
-from nameCon import *
+from ZR_nameCon import *
 from ZR_makeControler import *
 from ZR_displayCurve import *
 from ZR_rotatePlane import * 
@@ -15,23 +16,23 @@ from ZR_rotatePlane import *
 
 
 def ZR_rotatePlane(pointA, pointB, pointC) :
-    # Si le groupe de rangement"PREVIZ" n'existe pas, le créer
+
+    # If group "PREVIZ" doesn't exists, create it
     if cmds.objExists("PREVIZ") != 1 :
         cmds.group(em = 1, n = "PREVIZ")
 
-    # Création du locator de previz et de son groupe de placement
-
-    previzLoc = cmds.spaceLocator(name = (nameCon("", "previz", "locator")))
-    previzGrp = cmds.group(em = 1, n = (nameCon("", "previz", "group")))
+    # Creation of preview locator and it's placement group
+    previzLoc = cmds.spaceLocator(name = (ZR_nameCon("", "previz", "locator")))
+    previzGrp = cmds.group(em = 1, n = (ZR_nameCon("", "previz", "group")))
  
-    # Création du plan de previz
+    # Creation of the plane
     previzPlane = cmds.polyCreateFacet(p=[(0,0,0), (0,0,0), (0,0,0)])
     # Rangement
     cmds.parent(previzLoc[0], previzGrp)
     cmds.parent(previzGrp, "PREVIZ")
     cmds.parent(previzPlane, "PREVIZ")
     
-    # Création des nodes
+    # Creation of nodes
     aimMatrixNode = cmds.createNode("aimMatrix")
     cmds.setAttr(f"{aimMatrixNode}.secondaryMode",1)
         
@@ -46,6 +47,7 @@ def ZR_rotatePlane(pointA, pointB, pointC) :
     decomposeMatrixA = cmds.createNode("decomposeMatrix")
     decomposeMatrixB = cmds.createNode("decomposeMatrix")
     decomposeMatrixC = cmds.createNode("decomposeMatrix")
+
     # Connections
     cmds.connectAttr(f"{pointA}.worldMatrix[0]", f"{distanceNode}.inMatrix1")
     cmds.connectAttr(f"{pointA}.worldMatrix[0]", f"{aimMatrixNode}.inputMatrix")
@@ -70,17 +72,20 @@ def ZR_rotatePlane(pointA, pointB, pointC) :
     cmds.connectAttr(f"{decomposeMatrixC}.outputTranslate", f"{previzPlane[0]}.pnts[2]")
 
     cmds.connectAttr(f"{aimMatrixNode}.outputMatrix", f"{previzGrp}.offsetParentMatrix")
-    # Paramétrage du look du Locator
+
+    # Set locator look
     # Lock Channels
-    # Selection (et Return) du Locator de Previz / Print de confirmation
+    # Selection (and Return) of locator
  
  
 # -------------------------------------------------------------------------------------------
-# Bouton Viewport
+# Create rotate plane on selection
 # -------------------------------------------------------------------------------------------
  
+
 def ZR_rotatePlaneSelection() :
-    # Definir les trois points via la selection (si nous n'avons pas trois transforms : erreur !)
+
+    # Define the 3 points with selection
     selList = cmds.ls(sl=True)
     
     if len(selList) == 0:
