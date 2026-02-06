@@ -1,13 +1,14 @@
 #----------------------------------------------------------------#
 #						ZR Name Convention						 #
-#						   v.2025-08-03							 #
+#                     	Author : ZeeliA                          #
+#						   v.2026-02-06							 #
 #----------------------------------------------------------------#
 
 # Import commands
 import maya.cmds as cmds
 
 # ----------------------------------------------------------------
-# Function : ZR_nameCon
+# Function : Naming convention
 # ----------------------------------------------------------------
 
 
@@ -74,6 +75,6 @@ def ZR_nameCon(objSpace, objName, objType):
 		elif objSpace == "middle" :
 			objSpaceName = "Mid"
 
-		return (objSpaceName + "_" + objName + "_" + objTypeName)
+		return (f"{objSpaceName}_{objName}_{objTypeName}")
 		
 	
