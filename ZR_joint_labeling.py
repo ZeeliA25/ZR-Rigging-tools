@@ -10,7 +10,7 @@ import maya.cmds as cmds
 # Function : Label joints according to name
 #---------------------------------------------------------------
 
-def ZR_jointLabeling(obj) :
+def ZR_joint_labeling(obj) :
     sel = cmds.ls(sl = True) 
 
     for each in sel :
