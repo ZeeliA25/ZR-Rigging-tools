@@ -1,7 +1,7 @@
 #----------------------------------------------------------------#
 #                       ZR Ribbon Maker                          #
 #                     Author : ZeeliA                            #
-#                         v.2026-02-06                           #
+#                       v.2026-04-02.002                         #
 #----------------------------------------------------------------#
 
 # Import modules and commands
@@ -9,7 +9,7 @@
 import maya.cmds as cmds
 from ZR_nameCon import *
 from ZR_matrixRivet import *
-from ZR_twistExtractor import*
+from ZR_twist_extractor import*
 
 # ----------------------------------------------------------------
 # Function : Ribbon Maker
@@ -95,7 +95,7 @@ def ZR_ribbon_maker(startObj, endObj, twistOrder, globalLoc) :
 
     # Twist Extractor
     if twistOrder == "Start" :
-        twistExtractor = ZR_twistExtractor(startObj, "Start")
+        twistExtractor = ZR_twist_extractor(startObj, "Start")
 
         # Needs update for the start twist 
         upVector = cmds.spaceLocator(name = ZR_nameCon(startName[0], startName[1], "locator"))
@@ -130,7 +130,7 @@ def ZR_ribbon_maker(startObj, endObj, twistOrder, globalLoc) :
 
 
     elif twistOrder == "End" :
-        twistExtractor = ZR_twistExtractor(endObj, "End")
+        twistExtractor = ZR_twist_extractor(endObj, "End")
 
     for number in range(1, jointNumber+1) :
 
