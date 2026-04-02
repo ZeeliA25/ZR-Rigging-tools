@@ -1,7 +1,7 @@
 #----------------------------------------------------------------#
 #						ZR Name Convention						 #
 #                     	Author : ZeeliA                          #
-#						   v.2026-02-06							 #
+#						   v.2026-04-02							 #
 #----------------------------------------------------------------#
 
 # Import commands
@@ -50,14 +50,20 @@ def ZR_nameCon(objSpace, objName, objType):
 
 	if objSpace == "" :
 		objSpaceName = ""
-		return (objName + "_" + objTypeName)
+		return (f"{objName}_{objTypeName}")
 
 	else :
 
 		if objSpace == "left" :
 			objSpaceName = "L"
 
+		elif objSpace == "L" :
+			objSpaceName = "L"
+
 		elif objSpace == "right" :
+			objSpaceName = "R"
+
+		elif objSpace == "R" :
 			objSpaceName = "R"
 
 		elif objSpace == "center" :
