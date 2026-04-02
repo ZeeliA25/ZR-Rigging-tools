@@ -1,7 +1,7 @@
 #--------------------------------------------------------------#
 #                       ZR IKFK		                           #
 #                     Author : ZeeliA                          #
-#                v.2026-02-06-001 / Maya 2023.3.1              #
+#                v.2026-04-02-004 / Maya 2023.3.1              #
 #--------------------------------------------------------------#
 
 # Import modules
@@ -11,6 +11,7 @@ from ZR_make_controler import *
 from ZR_display_curve import *
 from ZR_rotatePlane import *
 from ZR_ribbon_maker import *
+from ZR_reverse_foot import *
 
 #---------------------------------------------------------------
 # Identify different parts of the IKFK system
@@ -48,6 +49,7 @@ son = cmds.listRelatives(dad, c = True)
 grandson = cmds.listRelatives(son, c = True)
 cousin = cmds.listRelatives(grandson, c = True)
 cousinEnd = cmds.listRelatives(cousin, c = True)
+grandsonEnd = cmds.listRelatives(cousinEnd, c = True)
 
 # Look for selection's parent (clavicle)
 
@@ -89,6 +91,7 @@ grandsonSK = cmds.rename(grandson, ZR_nameCon(side, grandsonName, "skin"))
 if limbType == "leg" :
     cousinSK = cmds.rename(cousin, ZR_nameCon(side, digit, "skin"))
     cousinEndSK = cmds.rename(cousinEnd, ZR_nameCon(side, digit, "skinEnd"))
+    grandsonEndSK = cmds.rename(grandsonEnd, ZR_nameCon(side, grandsonName, "skinEnd"))
 
 
 # Get main controller's size
@@ -143,7 +146,6 @@ if limbType == "leg" :
 
 # Creation of FK pole vector
 FKpvBase = ZR_make_controler(sonSK, sphere_shape)
-print(FKpvBase[0], FKpvBase[1])
 FKpvCtl = cmds.rename(FKpvBase[0], ZR_nameCon(side, f"FK{limbType}PV", "controller"))
 FKpvGrp = cmds.rename(FKpvBase[1], ZR_nameCon(side, f"FK{limbType}PV", "group"))
 
@@ -306,12 +308,29 @@ cmds.poleVectorConstraint(pvCtl, ikRpHandle[0])
 
 cmds.orientConstraint(handIKctl, grandsonIK)
 
+# Proxy of IKFK attribute from "GLOBAL" locator to the IK controllers
+
+cmds.addAttr(handIKctl, ln="IKFK", pxy= f"{globalLoc[0]}.IKFK")
+cmds.addAttr(pvCtl, ln="IKFK", pxy= f"{globalLoc[0]}.IKFK")
+ 
+#----------------------------------------------------------------
+# Reverse foot
+#----------------------------------------------------------------
 # Create IK handle (single chain) for the foot 
 
 if limbType == "leg" :
     footIKSCHandle = cmds.ikHandle(n = ZR_nameCon(side, "footIKSC", "handle"), startJoint = grandsonIK, endEffector = cousinIK, solver = "ikSCsolver")
     toesIKSCHandle = cmds.ikHandle(n = ZR_nameCon(side, "toesIKSC", "handle"), startJoint = cousinIK, endEffector = cousinEndIK, solver = "ikSCsolver")
- 
+
+    reverse_foot = ZR_reverse_foot(side, handIKctl)
+
+    cmds.parent(toesIKSCHandle[0], reverse_foot[0])
+    cmds.parent(footIKSCHandle[0], reverse_foot[1])
+    cmds.parent(ikRpHandle[0], reverse_foot[2])
+
+    cmds.setAttr(f"{reverse_foot[3]}.visibility", 0)
+
+
 #----------------------------------------------------------------
 # Stretch :)
 #----------------------------------------------------------------
@@ -355,10 +374,6 @@ cmds.setAttr(f"{multiplyGrandson}.operation", 2)
 cmds.setAttr(f"{multiplyGrandson}.floatB", lengthB)
 cmds.connectAttr(f"{clamp}.outputR", f"{multiplyGrandson}.floatA")
 cmds.connectAttr(f"{multiplyGrandson}.outFloat", f"{grandsonIK}.translateX")
- 
-# Proxy of IKFK attribute from "GLOBAL" locator to the IK controllers
-cmds.addAttr(handIKctl, ln="IKFK", pxy= f"{globalLoc[0]}.IKFK")
-cmds.addAttr(pvCtl, ln="IKFK", pxy= f"{globalLoc[0]}.IKFK")
 
 #---------------------------------------------------------------
 # Blend system
@@ -462,7 +477,7 @@ cmds.connectAttr(f"{sonRibCtl}.rotate", f"{sonCurves[1]}.rotate")
 #---------------------------------------------------------------
 	
 cmds.addAttr(globalLoc[0], ln = "Limb_Type", dataType = "string")
-cmds.setAttr(f"{globalLoc[0]}.Limb_Type", "arm", type = "string", lock=1)
+cmds.setAttr(f"{globalLoc[0]}.Limb_Type", limbType, type = "string", lock=1)
 
 cmds.addAttr(globalLoc[0], ln = "FK_ctl_01", dataType = "string")
 cmds.setAttr(f"{globalLoc[0]}.FK_ctl_01", dadCtl, type = "string", lock=1)
@@ -490,3 +505,17 @@ cmds.setAttr(f"{globalLoc[0]}.IK_jnt_02", sonIK, type = "string", lock=1)
 
 cmds.addAttr(globalLoc[0], ln = "IK_jnt_03", dataType = "string")
 cmds.setAttr(f"{globalLoc[0]}.IK_jnt_03", grandsonIK, type = "string", lock=1)
+
+
+def ZR_IKFK_selection():
+
+    # List selection 
+    sel = cmds.ls(sl=True, type = "joint")
+
+    # Check if only one object is selected
+    if len(sel) != 1 :
+        cmds.error("Too many arguments selected")
+
+    else :
+        selected_joint = sel[0]
+        ZR_IKFK(selected_joint)
