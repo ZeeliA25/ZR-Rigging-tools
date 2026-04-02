@@ -5,7 +5,7 @@
 #--------------------------------------------------------------#
 
 import maya.cmds as cmds
-from nameCon import *
+from ZR_nameCon import *
 
 #---------------------------------------------------------------
 # Function : Ceating a display curve between two objects
@@ -16,7 +16,7 @@ def ZR_display_curve(startObject, endObject) :
 
 	#Create a linear curve and rename it
 	curveBase = cmds.curve(d=1, p=[(0, 0, 0), (2, 0, 0)] )
-	displayCurve = cmds.rename(curveBase, nameCon("", startObject, "curve"))
+	displayCurve = cmds.rename(curveBase, ZR_nameCon("", startObject, "curve"))
 
 	#Find it's shape
 	curveShape = cmds.listRelatives(displayCurve, shapes=1)
