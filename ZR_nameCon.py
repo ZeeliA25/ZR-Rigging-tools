@@ -1,7 +1,7 @@
 #----------------------------------------------------------------#
 #						ZR Name Convention						 #
 #                     	Author : ZeeliA                          #
-#						   v.2026-04-02							 #
+#						v.2026-04-02.003						 #
 #----------------------------------------------------------------#
 
 # Import commands
@@ -25,8 +25,14 @@ def ZR_nameCon(objSpace, objName, objType):
 	elif objType == "skin" :
 		objTypeName = "sk"
 
+	elif objType == "skinEnd" :
+		objTypeName = "se"
+
 	elif objType == "rig":
 		objTypeName = "ik"
+
+	elif objType == "rigEnd":
+		objTypeName = "ie"
 
 	elif objType == "joint" :
 		objTypeName = "jnt"
