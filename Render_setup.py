@@ -28,7 +28,7 @@ def set_camera_visibility():
         visibilityValue = cmds.getAttr(f"{obj}.rman_visibilityCamera")
 
         if visibilityValue == 0 :
-            cmds.setAttr(obj + ".rman_visibilityCamera", 1)
+            cmds.setAttr(f"{obj}.rman_visibilityCamera", 1)
         
         elif visibilityValue == 1 :                
             cmds.setAttr(f"{obj}.rman_visibilityCamera", 0)
