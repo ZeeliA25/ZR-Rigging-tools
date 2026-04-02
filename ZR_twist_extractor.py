@@ -42,7 +42,7 @@ def ZR_twist_extractor(obj, twistOrder) :
 
 		cmds.matchTransform(twistExtractor, parentObj[0])
 		cmds.matchTransform(twistExtractor, obj, position = 1, rotation = 0, scale = 0)
-		ZR_matrixConstraint(parentObj[0], twistExtractor)
+		ZR_matrix_constraint(parentObj[0], twistExtractor)
 
 	# other connections
 	cmds.connectAttr(f"{mMatrixNode}.matrixSum", f"{dMatrixNode}.inputMatrix")
