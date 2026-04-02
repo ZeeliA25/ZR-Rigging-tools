@@ -44,28 +44,28 @@ def ZR_ribbon_maker(startObj, endObj, twistOrder, globalLoc) :
     # Create three curves (unless they already exist)
 
 
-    startCurve = cmds.curve(degree=1, p=[(0, 1, 0), (0, -1, 0)], n = ZR_nameCon(startName[0], startName[1] + "Start", "curve"))
+    startCurve = cmds.curve(degree=1, p=[(0, 1, 0), (0, -1, 0)], n = ZR_nameCon(startName[0], f"{startName[1]}Start", "curve"))
 
-    midCurve = cmds.curve(degree=1, p=[(0, 1, 0), (0, -1, 0)], n = ZR_nameCon(endName[0], endName[1] + "Mid", "curve"))
+    midCurve = cmds.curve(degree=1, p=[(0, 1, 0), (0, -1, 0)], n = ZR_nameCon(endName[0], f"{endName[1]}Mid", "curve"))
 
-    endCurve = cmds.curve(degree=1, p=[(0, 1, 0), (0, -1, 0)], n = ZR_nameCon(endName[0], endName[1] + "End", "curve"))
+    endCurve = cmds.curve(degree=1, p=[(0, 1, 0), (0, -1, 0)], n = ZR_nameCon(endName[0], f"{endName[1]}End", "curve"))
 
 	# Place the three curves and make them follow the objects
     blendMatrixEndNode = cmds.createNode("blendMatrix")
-    cmds.connectAttr(startObj + ".worldMatrix[0]", blendMatrixEndNode + ".inputMatrix")
-    cmds.connectAttr(endObj + ".worldMatrix[0]", blendMatrixEndNode + ".target[0].targetMatrix")
-    cmds.setAttr(blendMatrixEndNode + ".target[0].rotateWeight", 0)
+    cmds.connectAttr(f"{startObj}.worldMatrix[0]", f"{blendMatrixEndNode}.inputMatrix")
+    cmds.connectAttr(f"{endObj}.worldMatrix[0]", f"{blendMatrixEndNode}.target[0].targetMatrix")
+    cmds.setAttr(f"{blendMatrixEndNode}.target[0].rotateWeight", 0)
 
-    cmds.connectAttr(startObj + ".worldMatrix[0]", startCurve + ".offsetParentMatrix", force = 1)
-    cmds.connectAttr(blendMatrixEndNode + ".outputMatrix", endCurve + ".offsetParentMatrix", force = 1)
+    cmds.connectAttr(f"{startObj}.worldMatrix[0]", f"{startCurve}.offsetParentMatrix", force = 1)
+    cmds.connectAttr(f"{blendMatrixEndNode}.outputMatrix", f"{endCurve}.offsetParentMatrix", force = 1)
 
     blendMatrixNode = cmds.createNode("blendMatrix")
     
-    cmds.connectAttr(startCurve + ".worldMatrix[0]", blendMatrixNode + ".inputMatrix", force = 1)
-    cmds.connectAttr(endCurve + ".worldMatrix[0]", blendMatrixNode + ".target[0].targetMatrix", force = 1)
-    cmds.connectAttr(blendMatrixNode+".outputMatrix", midCurve+".offsetParentMatrix", force = 1)
-    cmds.setAttr(blendMatrixNode + ".target[0].weight", 0.5)
-    cmds.setAttr(blendMatrixNode+".target[0].rotateWeight", 0)
+    cmds.connectAttr(f"{startCurve}.worldMatrix[0]", f"{blendMatrixNode}.inputMatrix", force = 1)
+    cmds.connectAttr(f"{endCurve}.worldMatrix[0]", f"{blendMatrixNode}.target[0].targetMatrix", force = 1)
+    cmds.connectAttr(f"{blendMatrixNode}.outputMatrix", f"{midCurve}.offsetParentMatrix", force = 1)
+    cmds.setAttr(f"{blendMatrixNode}.target[0].weight", 0.5)
+    cmds.setAttr(f"{blendMatrixNode}.target[0].rotateWeight", 0)
 
     # Place the curves inside the hierarchy
     if cmds.objExists("RIBBONS_CRV") :
@@ -83,7 +83,7 @@ def ZR_ribbon_maker(startObj, endObj, twistOrder, globalLoc) :
     cmds.rebuildSurface(ribbonBase[0], du = 3, dv = 1, kr=0, su=6, sv = 0, ch = 1, rpo = 1)
 
     # Rename the ribbon
-    ribbon = cmds.rename(ribbonBase[0], endObj + "_ribbon")
+    ribbon = cmds.rename(ribbonBase[0], f"{endObj}_ribbon")
 
     # Find the rebuilt ribbon's shape
     ribbonShapeList = cmds.listRelatives(ribbon, shapes=1)
@@ -108,24 +108,24 @@ def ZR_ribbon_maker(startObj, endObj, twistOrder, globalLoc) :
             cmds.move(0,-5,0, upVector[0], r = True, os = True, wd = True)
 
         aimMatrixNode = cmds.createNode("aimMatrix")
-        cmds.connectAttr( globalLoc + ".worldMatrix[0]", aimMatrixNode + ".inputMatrix")
-        cmds.connectAttr(endObj + ".worldMatrix[0]", aimMatrixNode + ".primaryTargetMatrix")
-        cmds.connectAttr(upVector[0] + ".worldMatrix[0]", aimMatrixNode + ".secondaryTargetMatrix")
-        cmds.setAttr(aimMatrixNode + ".secondaryMode", 1)
+        cmds.connectAttr( f"{globalLoc}.worldMatrix[0]", f"{aimMatrixNode}.inputMatrix")
+        cmds.connectAttr(f"{endObj}.worldMatrix[0]", f"{aimMatrixNode}.primaryTargetMatrix")
+        cmds.connectAttr(f"{upVector[0]}.worldMatrix[0]", f"{aimMatrixNode}.secondaryTargetMatrix")
+        cmds.setAttr(f"{aimMatrixNode}.secondaryMode", 1)
         
         if startName[0] == "R" :
-            cmds.setAttr(aimMatrixNode + ".primaryInputAxisX", -1)
-            cmds.setAttr(aimMatrixNode + ".secondaryInputAxisY", -1)
+            cmds.setAttr(f"{aimMatrixNode}.primaryInputAxisX", -1)
+            cmds.setAttr(f"{aimMatrixNode}.secondaryInputAxisY", -1)
 
-        cmds.connectAttr(aimMatrixNode + ".outputMatrix", startCurve + ".offsetParentMatrix", force = 1)
+        cmds.connectAttr(f"{aimMatrixNode}.outputMatrix", f"{startCurve}.offsetParentMatrix", force = 1)
 
         blendMatrixStartNode = cmds.createNode("blendMatrix")
-        cmds.connectAttr(aimMatrixNode + ".outputMatrix", blendMatrixStartNode + ".inputMatrix")
-        cmds.connectAttr(endObj + ".worldMatrix[0]", blendMatrixStartNode + ".target[0].targetMatrix")
-        cmds.setAttr(blendMatrixStartNode + ".target[0].scaleWeight", 0)
-        cmds.setAttr(blendMatrixStartNode + ".target[0].rotateWeight", 0)
-        cmds.setAttr(blendMatrixStartNode + ".target[0].shearWeight", 0)
-        cmds.connectAttr(blendMatrixStartNode + ".outputMatrix", endCurve + ".offsetParentMatrix", force = 1)
+        cmds.connectAttr(f"{aimMatrixNode}.outputMatrix", f"{blendMatrixStartNode}.inputMatrix")
+        cmds.connectAttr(f"{endObj}.worldMatrix[0]", f"{blendMatrixStartNode}.target[0].targetMatrix")
+        cmds.setAttr(f"{blendMatrixStartNode}.target[0].scaleWeight", 0)
+        cmds.setAttr(f"{blendMatrixStartNode}.target[0].rotateWeight", 0)
+        cmds.setAttr(f"{blendMatrixStartNode}.target[0].shearWeight", 0)
+        cmds.connectAttr(f"{blendMatrixStartNode}.outputMatrix", f"{endCurve}.offsetParentMatrix", force = 1)
 
 
 
@@ -139,7 +139,7 @@ def ZR_ribbon_maker(startObj, endObj, twistOrder, globalLoc) :
 
         rivetMatrix = ZR_matrixRivet(surfaceShape,(number*(1/(jointNumber+1))))
         
-        cmds.connectAttr(rivetMatrix + ".output", ribbonJoint + ".offsetParentMatrix")
+        cmds.connectAttr(f"{rivetMatrix}.output", f"{ribbonJoint}.offsetParentMatrix")
 
         # Twist connections
         if twistOrder == "Start" :
@@ -148,13 +148,13 @@ def ZR_ribbon_maker(startObj, endObj, twistOrder, globalLoc) :
             jointTwistCoef = (number*(1/(jointNumber+1)))    
         
         twistCoefNode = cmds.createNode("multDoubleLinear")
-        cmds.connectAttr((twistExtractor + ".rotateX"), (twistCoefNode + ".input1"))
-        cmds.setAttr(twistCoefNode + ".input2", jointTwistCoef)
-        cmds.connectAttr(twistCoefNode + ".output", ribbonJoint + ".rotateX")
+        cmds.connectAttr((f"{twistExtractor}.rotateX"), (f"{twistCoefNode}.input1"))
+        cmds.setAttr(f"{twistCoefNode}.input2", jointTwistCoef)
+        cmds.connectAttr(f"{twistCoefNode}.output", f"{ribbonJoint}.rotateX")
         
         # Scale connections
         
-        cmds.connectAttr("C_main_ctl.scale", ribbonJoint + ".scale")
+        cmds.connectAttr("C_main_ctl.scale", f"{ribbonJoint}.scale")
 
 
         # Place the joint inside the hierarchy
