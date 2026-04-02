@@ -6,9 +6,6 @@
 
 import maya.cmds as cmds
 from ZR_nameCon import *
-from ZR_makeControler import *
-from ZR_displayCurve import *
-from ZR_rotatePlane import * 
 
 # -------------------------------------------------------------------------------------------
 # Fonction : Create a plane to place pole vector
