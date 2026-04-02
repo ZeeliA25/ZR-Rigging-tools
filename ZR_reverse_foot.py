@@ -1,6 +1,7 @@
 #--------------------------------------------------------------#
 #                     ZR Reverse Foot 		                   #
-#                	  v.2025-08-14-001                		   #
+#                     Author : ZeeliA                          #
+#                	  v.2026-04-02-004                		   #
 #--------------------------------------------------------------#
 import maya.cmds as cmds
 from ZR_nameCon import*
@@ -10,7 +11,7 @@ from ZR_nameCon import*
 # Function : Reverse foot
 #---------------------------------------------------------------
 
-def ZR_reverseFoot(side, footCtl) :
+def ZR_reverse_foot(side, footCtl) :
 
 
 	#create the set-up and place the locators 
@@ -31,21 +32,21 @@ def ZR_reverseFoot(side, footCtl) :
 	
 	cmds.matchTransform(tiltIn, "locator1", pos = True, rot = False)
 	cmds.matchTransform(tiltOut, "locator2", pos = True, rot = False)
-	cmds.matchTransform(ballEndLoc, f"{side}_ankle_sk", pos = True, rot = False)
-	cmds.matchTransform(heelLoc, f"{side}_ankle_se", pos = True, rot = False)
-	cmds.matchTransform(toeLoc, f"{side}_toes_sk", pos = True, rot = False)
-	cmds.matchTransform(toeEndLoc, f"{side}_toes_se", pos = True, rot = False)
-	cmds.matchTransform(ballLoc, f"{side}_toes_sk", pos = True, rot = False)
-	cmds.matchTransform(ballCenter, f"{side}_toes_sk", pos = True, rot = False)
-	cmds.matchTransform(tipLoc, f"{side}_toes_se", pos = True, rot = False)
+	cmds.matchTransform(ballEndLoc, ZR_nameCon(side, "ankle", "skin"), pos = True, rot = False)
+	cmds.matchTransform(heelLoc, ZR_nameCon(side, "ankle", "skinEnd"), pos = True, rot = False)
+	cmds.matchTransform(toeLoc, ZR_nameCon(side, "toes", "skin"), pos = True, rot = False)
+	cmds.matchTransform(toeEndLoc, ZR_nameCon(side, "toes", "skinEnd"), pos = True, rot = False)
+	cmds.matchTransform(ballLoc, ZR_nameCon(side, "toes", "skin"), pos = True, rot = False)
+	cmds.matchTransform(ballCenter, ZR_nameCon(side, "toes", "skin"), pos = True, rot = False)
+	cmds.matchTransform(tipLoc, ZR_nameCon(side, "toes", "skinEnd"), pos = True, rot = False)
 	
 	cmds.matchTransform(grp, tiltOut)
 	
 
 	#hierarchy of the set-up
 
-	cmds.parent(ballLoc, ballCenter)
 	cmds.parent(ballEndLoc, ballLoc)
+	cmds.parent(ballLoc, ballCenter)
 	cmds.parent(ballCenter, tipLoc)
 	cmds.parent(toeLoc, tipLoc)
 	cmds.parent(toeEndLoc, toeLoc)
@@ -139,19 +140,19 @@ def ZR_reverseFoot(side, footCtl) :
 	cmds.setDrivenKeyframe(f"{tipLoc[0]}.rotateY", cd = f"{footCtl}.Tip_Sides")
 	cmds.setAttr(f"{footCtl}.Tip_Sides", 0 )
 	
-	return (toeEndLoc, ballLoc, ballEndLoc)
+	return (toeEndLoc, ballLoc, ballEndLoc, grp)
 
 
 #---------------------------------------------------------------
 # Function : Reverse foot on selection 
 #---------------------------------------------------------------
-def ZR_reverseFootSelection() :
+def ZR_reverse_foot_selection() :
 	# define selection
 
 	sel = cmds.ls(sl=True)
 	footCtl = sel[0]
 	selName = sel[0].split("_")
 	print(selName[0])
-	ZR_reverseFoot(selName[0], footCtl)
+	ZR_reverse_foot(selName[0], footCtl)
 	
 	
